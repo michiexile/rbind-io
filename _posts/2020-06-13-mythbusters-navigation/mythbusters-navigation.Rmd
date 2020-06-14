@@ -38,7 +38,7 @@ Raw numbers don't help me understand what I'm looking at all that easily - let's
 
 ```{r}
 navigating %>% 
-  gf_rug(~Score) %>%
+  gf_rugx(0~Score, color=~Gender, position="jitter") %>%
   gf_dens(~Score, color=~Gender) %>%
   gf_dens(color=~"total")
 ```
