@@ -1,0 +1,15 @@
+---
+title: "About this blog"
+description: |
+  Some additional details about the blog
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+The plan is for this to be a place to put musings, examples, and small texts relating to statistics and R/RStudio.
+
+# Who am I?
+
+I am Assistant Professor of Data Science at the Department of Mathematics at CUNY College of Staten Island. I am also a rampant computer geek who has been programming for fun since age 11. I use R and RStudio in my teaching, and always look for more interesting things that can be done on this platform - such as, for instance, this blog produced with the `distill` package.
