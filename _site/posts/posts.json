@@ -1,5 +1,21 @@
 [
   {
+    "path": "posts/2020-06-13-mythbusters-navigation/",
+    "title": "Mythbusters Navigation",
+    "description": "A look at data from Mythbusters 12x5.",
+    "author": [
+      {
+        "name": "Mikael Vejdemo-Johansson",
+        "url": {}
+      }
+    ],
+    "date": "2020-06-13",
+    "categories": [],
+    "preview": "posts/2020-06-13-mythbusters-navigation/mythbusters-navigation_files/figure-html5/unnamed-chunk-2-1.png",
+    "last_modified": "2020-06-13T22:25:34-04:00",
+    "input_file": {}
+  },
+  {
     "path": "posts/welcome/",
     "title": "Welcome to michiexile on statistics",
     "description": "Welcome to our new blog, michiexile on statistics. We hope you enjoy \nreading what we have to say!",

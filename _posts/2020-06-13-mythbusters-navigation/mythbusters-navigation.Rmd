@@ -1,0 +1,76 @@
+---
+title: "Mythbusters Navigation"
+description: |
+  A look at data from Mythbusters 12x5.
+author:
+  - name: Mikael Vejdemo-Johansson
+#    url: https://example.com/norajones
+date: 06-13-2020
+output:
+  distill::distill_article:
+    self_contained: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(knitr)
+ggplot2::theme_set(ggplot2::theme_minimal())
+```
+
+In Mythbusters 12x5, they test several myths about activities that allegedly either men or women excel at. For one of the tests they run, they actually give all the raw data on screen.
+
+The setup is this: the myth is that men excel at navigation, and they test this by inviting 10 men and 10 women to read a map and navigate between two places on the San Francisco peninsula. As they navigate, they are scored by two mythbusters on how smooth the navigation went, how many wrong turns and stops were taken, how much longer than necessary the route was etc. In the end a score between 0 and 100 was issued for each test subject.
+
+I wrote down the raw data from screen, and have made it available here: https://raw.githubusercontent.com/michiexile/mythbusters-data/master/S12/E05/navigating.csv
+As I keep on binging, I will try to extract more data from the episodes. I plan on putting it all up at https://github.com/michiexile/mythbusters-data
+
+So let's have a look at the data, shall we?
+
+```{r}
+library(tidyverse)
+library(ggformula)
+
+navigating = read.csv("https://raw.githubusercontent.com/michiexile/mythbusters-data/master/S12/E05/navigating.csv")
+navigating %>% kable()
+```
+
+Raw numbers don't help me understand what I'm looking at all that easily - let's get some graphics going.
+
+```{r}
+navigating %>% 
+  gf_rug(~Score) %>%
+  gf_dens(~Score, color=~Gender) %>%
+  gf_dens(color=~"total")
+```
+
+The densities of the scores don't really look all that different at first glance. The means are going to be a bit different, of course - but are they going to be sufficiently different?
+
+Well, we know how to compare means. Let's break out a classic: the T-test.
+
+```{r}
+navigating.test = t.test(Score ~ Gender, data=navigating)
+navigating.test
+```
+
+While the means are indeed different -- `r navigating.test$estimate["mean in group man"]` vs. `r navigating.test$estimate["mean in group woman"]` -- it is pretty clear from the test result that the difference in means is pretty small compared to the inherent variability in the data. We have no reason to reject our null hypothesis that the means could be the same, and no reason to believe that the ranking of men and women here comes down to anything more than chance.
+
+But wait -- can we rely on the T-test here? Is the data "good enough" for us to use the test?
+
+Usually, the requirement here would be that both the total dataset and each subdataset be approximately normally distributed for the T-test to be a valid statistical test. So let's take a look at that question too.
+
+```{r}
+navigating %>%
+  gf_qq(~Score) %>%
+  gf_qqline()
+```
+
+```{r}
+navigating %>%
+  gf_qq(~Score | Gender) %>%
+  gf_qqline()
+```
+
+The QQ-plots look pretty good -- data points line up pretty well in a straight line -- indicating that a (mostly) normal distribution is a reasonable judgement call.
+
+There we have it. In summary: gender differences in navigational ability is statistically **Busted**.
+
