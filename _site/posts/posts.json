@@ -1,5 +1,16 @@
 [
   {
+    "path": "posts/2020-07-24-bootstrap/",
+    "title": "The Bootstrap",
+    "description": "A description of the Bootstrap, and an example from \"All of Statistics\"",
+    "author": [],
+    "date": "2020-07-24",
+    "categories": [],
+    "preview": "posts/2020-07-24-bootstrap/distill-preview.png",
+    "last_modified": "2020-07-24T17:23:09-04:00",
+    "input_file": "bootstrap.utf8.md"
+  },
+  {
     "path": "posts/2020-06-13-mythbusters-navigation/",
     "title": "Mythbusters Navigation",
     "description": "A look at data from Mythbusters 12x5.",

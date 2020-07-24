@@ -10,3 +10,13 @@ navbar:
     - text: "About"
       href: about.html
 output: distill::distill_article
+
+author:
+  name: Mikael Vejdemo-Johansson
+  url: http://michiexile.rbind.io
+  affiliation: CUNY College of Staten Island
+  affiliation_url: http://www.math.csi.cuny.edu/~mvj
+repository_url: https://github.com/michiexile/rbind-io
+twitter:
+  creator: "@michiexile"
+creative_commons: CC BY
