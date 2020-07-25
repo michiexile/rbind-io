@@ -2,7 +2,6 @@
 title: "The Bootstrap"
 description: |
   A description of the Bootstrap, and an example from "All of Statistics"
-author:
 date: "2020-07-24"
 output: distill::distill_article
 ---
@@ -55,6 +54,7 @@ GPA \sim \beta_1 LSAT + \beta_0
 \]
 and easily calculated using `lm(gpa~lsat, lsat.gpa)`.
 Computing this generates the model parameters as:
+
 ```{r}
 lsat.gpa.lm = lm(gpa~lsat, lsat.gpa)
 lsat.gpa.lm$coefficients %>% kable()
@@ -135,6 +135,7 @@ Wasserman suggests three approaches for confidence intervals:
 3. Just take quantiles directly from the $T^*$ quantities to form a *bootstrap percentile interval*.
 
 So to compute the 95% two-sided confidence intervals, we could use the following R-code:
+
 ```{r}
 boot.ci.normal = c(
   lo=lsat.gpa.lm$coefficients["(Intercept)"]+
