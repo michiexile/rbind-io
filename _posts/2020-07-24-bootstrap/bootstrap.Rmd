@@ -171,5 +171,76 @@ rbind(
 ) %>% kable()
 ```
 
+Now, the `boot.ci.normal` confidence intervals here assume that the intercept and slope both distribute approximately normally. The usual way to check this is through QQ-plots:
+
+```{r}
+ggplot(lsat.gpa.lm.boot, aes(sample=intercept)) +
+  geom_qq() + geom_qq_line() + ggtitle("Intercept QQ")
+ggplot(lsat.gpa.lm.boot, aes(sample=lsat)) +
+  geom_qq() + geom_qq_line() + ggtitle("Slope QQ")
+```
+
+
+
+## In `R`
+
+"But wait!", I hear you say, "Surely I don't have to code this myself every time?!"
+
+Indeed, like with so many other statistical methods, there is of course functionality in `R` to do the bootstrap.
+The package `boot` was developed for a book on bootstrapping, and contains functions for running the bootstrap on whatever data and statistic you may have.
+
+At the core of `boot` sits the function `boot`, which takes as mandatory options:
+
+* The dataset
+* A function that returns the statistic of interest
+* The number $B$ of bootstrap repetitions
+
+To figure out how to write all of these pieces, let's read a quote from the `boot` documentation:
+
+> `statistic` must take at least two arguments. The first
+argument passed will always be the original data. The second will be a vector of indices, frequencies or weights which define the bootstrap sample. Further, if predictions are required, then a third argument is required which would be a vector of the random indices used to generate the bootstrap predictions.
+
+In other words, we need to write a function `statistic(data, indices)` that then computes the relevant statistic based on the data contained in `data[,indices]`.
+
+In code, this would look something like this:
+
+```{r}
+library(boot)
+lsat.gpa.boot = boot(lsat.gpa, 
+                     function(data,ind) {
+                       lm(gpa~lsat, data=data[ind,])$coefficients
+                     }, 
+                     B)
+```
+
+Now, `lsat.gpa.boot` contains a *Bootstrap object* that we can interact with in various ways.
+For starters, `lsat.gpa.boot$t` contains the actual Bootstrap replicates -- the statistics values computed in each round.
+There are specialized functions to plot and to print bootstrap objects:
+
+```{r}
+print(lsat.gpa.boot)
+```
+
+```{r}
+plot(lsat.gpa.boot)
+```
+
+Helpfully, the plotting function gives us a QQ-plot to help determine whether the normal approximation confidence intervals are reasonable to use in this case.
+
+Possibly even more interesting than these is the `boot.ci` function: it computes a number of different possible confidence interval types:
+
+* Normal approximation
+* Basic bootstrap interval
+* Studentized bootstrap interval
+* Bootstrap percentile interval
+* Adjusted bootstrap percentile
+
+Earlier in this post, we calculated the Normal approximation, and the Bootstrap percentile intervals.
+It's not clear to me how the terminology used by Wasserman maps to the terminology used by the authors of the `boot` package, which makes it more difficult to tell which of the remaining bootstrap intervals -- if any -- corresponds to the one with the inverted empirical CDF.
+
+```{r}
+boot.ci(lsat.gpa.boot, index=1) # the intercept
+boot.ci(lsat.gpa.boot, index=2) # the slope
+```
 
 
