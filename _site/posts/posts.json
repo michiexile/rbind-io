@@ -1,5 +1,16 @@
 [
   {
+    "path": "posts/2020-08-04-robustness/",
+    "title": "Robustness simulations in R",
+    "description": "Repeating robustness tests from John D Cook's blog, but with R code instead of Python.",
+    "author": [],
+    "date": "2020-08-05",
+    "categories": [],
+    "preview": "posts/2020-08-04-robustness/distill-preview.png",
+    "last_modified": "2020-08-05T14:51:12-04:00",
+    "input_file": "robustness.utf8.md"
+  },
+  {
     "path": "posts/2020-07-24-bootstrap/",
     "title": "The Bootstrap",
     "description": "A description of the Bootstrap, and an example from \"All of Statistics\"",

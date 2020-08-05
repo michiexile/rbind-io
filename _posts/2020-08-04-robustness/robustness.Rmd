@@ -1,0 +1,291 @@
+---
+title: "Robustness simulations in R"
+description: |
+  Repeating robustness tests from John D Cook's blog, but with R code instead of Python.
+date: "`r Sys.Date()`"
+output: distill::distill_article
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggformula)
+```
+
+In a [blog post from 2018](https://www.johndcook.com/blog/2018/05/11/two-sample-t-test/), John D Cook goes through a number of simulations of different distributions to examine the robustness of the two-sample $t$-test to failure of its assumptions.
+
+In this blog post we will follow along with Cook's examination, and provide explicit R-code to run each of the tests.
+The R-code here is the main point in writing this blog post.
+
+The basic observation Cook starts out with is that the $t$-test is well known to be robust to departures from a normal distribution - as long as the distribution is still symmetric (and the tails are not too fat, ie outliers are few).
+How far away can we go, is the basic question Cook poses.
+
+As an experiment design, we follow Cook in that the null hypothesis throughout will be that two groups both have mean 100, standard deviation 15, and that the alternative has one group at 100 and one at 110 - still with standard deviation 15.
+We want to calibrate our tests to have a 0.95 confidence level and 0.80 power.
+
+To figure out the required sample size for these parameters, R helpfully provides the `power.t.test` function:
+
+```{r}
+N = power.t.test(delta=10, sd=15, sig.level=0.05, power=0.8)$n %>% floor
+N
+```
+
+Rounding down we get the same result as Cook does: the sample size should be 36.
+
+We will run each simulation 10000 times.
+
+```{r}
+N.sim = 10000
+```
+
+## Normal Distributions
+
+When all distributions are normal, the conditions hold as expected.
+We can simulate this situation as follows:
+
+```{r}
+p.values.null = sapply(1:N.sim, function(n) {
+  dist1 = rnorm(N, 100, 15)
+  dist2 = rnorm(N, 100, 15)
+  t.test(dist1, dist2)$p.value
+})
+p.values.alt = sapply(1:N.sim, function(n) {
+  dist1 = rnorm(N, 100, 15)
+  dist2 = rnorm(N, 110, 15)
+  t.test(dist1, dist2)$p.value
+})
+
+c(`% rejected null` = 100*sum(p.values.null < 0.05)/N.sim,
+  `% rejected alt` = 100*sum(p.values.alt < 0.05)/N.sim)
+```
+
+A few words on the code here.
+I am using `sapply` ("smart apply") - it runs the function in the second argument on each element in the first argument - and collects whatever comes out of the last statement of the function into an appropriate container: vectors or matrices for most uses.
+So for each number from 1 to `r N.sim`, we do something - that something is to create random numbers from two different calls to `rnorm`, run the $t$-test for these collections of random numbers, and return the resulting $p$-value.
+With $p$-values in hand we can later on count (using `sum` on a logical statement) how many rejections we are making and normalize with division by `N.sim` to get a fraction out.
+
+
+The distributions we are comparing here look something like this:
+
+```{r}
+gf_dist(dist="norm", mean=100, sd=15, color=~"null") %>%
+  gf_dist(dist="norm", mean=110, sd=15, color=~"alt")
+```
+
+## Gamma Distribution
+
+Next up, Cook considers draws from a Gamma distribution.
+To get a mean of 100 and a standard deviation of 15, we need to pick shape $a$ and scale $b$ such that $ab=100$ and $ab^2=15$.
+Cook solves it for us to get parameters $44.44; 2.25$ for the null distribution and $53.77; 2.045$ for the alternative.
+
+The distributions end up looking like this:
+
+```{r}
+gf_dist(dist="norm", mean=100, sd=15, color="black") %>%
+  gf_dist(dist="gamma", shape=44.44, scale=2.25, color=~"null") %>%
+  gf_dist(dist="gamma", shape=53.75, scale=2.045, color=~"alt")
+```
+
+We simulate using `rgamma` to draw the random numbers:
+
+```{r}
+p.values.null = sapply(1:N.sim, function(n) {
+  dist1 = rgamma(N, shape=44.44, scale=2.25)
+  dist2 = rgamma(N, shape=44.44, scale=2.25)
+  t.test(dist1, dist2)$p.value
+})
+p.values.alt = sapply(1:N.sim, function(n) {
+  dist1 = rgamma(N, shape=44.44, scale=2.25)
+  dist2 = rgamma(N, shape=53.77, scale=2.045)
+  t.test(dist1, dist2)$p.value
+})
+
+c(`% rejected null` = 100*sum(p.values.null < 0.05)/N.sim,
+  `% rejected alt` = 100*sum(p.values.alt < 0.05)/N.sim)
+```
+
+We see, just like Cook, that both power and level in this setup work out nicely - but we also can see from the distribution plots that the distribution is not particularly far from being normal.
+So next, Cook considers Gamma distributions that are shifted from their normal range.
+
+```{r}
+gf_dist(dist="norm", mean=100, sd=15, color="black") %>%
+  gf_fun(dgamma(x-90, shape=6.67, scale=1.5) ~ x, color=~"null") %>%
+  gf_fun(dgamma(x-90, shape=1.28, scale=11.25) ~ x, color=~"alt")
+```
+
+Now that we have distributions that are distinctly non-normal - an alternative distribution with some serious skewness, and long and heavy upper tails - let's simulate again.
+
+```{r}
+p.values.null = sapply(1:N.sim, function(n) {
+  dist1 = rgamma(N, shape=6.67, scale=1.5)+90
+  dist2 = rgamma(N, shape=6.67, scale=1.5)+90
+  t.test(dist1, dist2)$p.value
+})
+p.values.alt = sapply(1:N.sim, function(n) {
+  dist1 = rgamma(N, shape=6.67, scale=1.5)+90
+  dist2 = rgamma(N, shape=1.28, scale=11.25)+90
+  t.test(dist1, dist2)$p.value
+})
+
+c(`% rejected null` = 100*sum(p.values.null < 0.05)/N.sim,
+  `% rejected alt` = 100*sum(p.values.alt < 0.05)/N.sim)
+```
+
+Test level looks good, but test power is atrocious: you'd have a 50-50 chance of actually being able to tell that the one distribution has a higher mean than the other when it really does.
+
+Here, I get curious: what happens if we swap the shapes?
+We'd get, with the skew shape at mean 100 and the more symmetric shape at mean 110, something like the following:
+
+```{r}
+p.values.null = sapply(1:N.sim, function(n) {
+  dist1 = rgamma(N, shape=6.67, scale=1.5)+90
+  dist2 = rgamma(N, shape=6.67, scale=1.5)+90
+  t.test(dist1, dist2)$p.value
+})
+p.values.alt = sapply(1:N.sim, function(n) {
+  dist1 = rgamma(N, shape=1.28, scale=11.25)+85
+  dist2 = rgamma(N, shape=6.67, scale=1.5)+100
+  t.test(dist1, dist2)$p.value
+})
+
+c(`% rejected null` = 100*sum(p.values.null < 0.05)/N.sim,
+  `% rejected alt` = 100*sum(p.values.alt < 0.05)/N.sim)
+```
+
+All of a sudden, we get a very - very high power, and still a pretty good level.
+It matters quite a bit to Cook's example whether the upper skew is the left or the right distribution in the setup: in one case, the power drops precipitously - in the other, we get a power boost.
+
+Or for that matter, what happens if we use different shapes in the null case as well?
+Still same mean and standard deviation - but the two samples come from non-identical distributions?
+
+```{r}
+p.values.null = sapply(1:N.sim, function(n) {
+  dist1 = rgamma(N, shape=1.28, scale=11.25)+85
+  dist2 = rgamma(N, shape=6.67, scale=1.5)+90
+  t.test(dist1, dist2)$p.value
+})
+p.values.alt = sapply(1:N.sim, function(n) {
+  dist1 = rgamma(N, shape=1.28, scale=11.25)+85
+  dist2 = rgamma(N, shape=6.67, scale=1.5)+100
+  t.test(dist1, dist2)$p.value
+})
+
+c(`% rejected null` = 100*sum(p.values.null < 0.05)/N.sim,
+  `% rejected alt` = 100*sum(p.values.alt < 0.05)/N.sim)
+```
+
+The difference in distributions in the "null" case now means that the level has increased.
+We are almost twice as likely to claim a difference in means where none should exist as we wanted to be.
+
+
+
+## Uniform Distribution
+
+Recall that the uniform distribution on $[a,b]$ has variance $(b-a)^2/12$, so to get a standard deviation of 15, we will need a variance of $15^2$ so that $(b-a) = \sqrt{12\cdot15^2} \approx `r sqrt(12*15^2)`$.
+
+So a width $b-a$ of 52 will do the job. To get the mean to be 100, we will want to go from 100-52/2=74 to 100+52/2=126.
+
+We can simulate using almost the same code as previously.
+
+```{r}
+p.values.null = sapply(1:N.sim, function(n) {
+  dist1 = runif(N, 74, 126)
+  dist2 = runif(N, 74, 126)
+  t.test(dist1, dist2)$p.value
+})
+p.values.alt = sapply(1:N.sim, function(n) {
+  dist1 = runif(N, 74, 126)
+  dist2 = runif(N, 74, 126)+10
+  t.test(dist1, dist2)$p.value
+})
+
+c(`% rejected null` = 100*sum(p.values.null < 0.05)/N.sim,
+  `% rejected alt` = 100*sum(p.values.alt < 0.05)/N.sim)
+```
+
+Our $t$-test works excellently for a uniform distribution.
+
+
+## Fat tails: the Student t distribution
+
+In order to examine the effect of fat tails - of extremely large or small values being more common than in the normal distribution - Cook turns to the $t$ distribution.
+The $t$ distribution with $d$ degrees of freedom has variance $d/(d-2)$ - so in order to get standard deviation 15, we need to rescale it so that the variance is $15^2$.
+From $\mathbb{V}(aX) = a^2\mathbb{V}(X)$, we can insert the values we have determined to get an equation $15^2 = a^2 d/(d-2)$ for the scaling factor we need, giving us $a=\sqrt{15^2(d-2)/d}=15\sqrt{(d-2)/d}$.
+
+First out is a moderately fat tailed distribution: $t(6)$.
+We get a scaling factor of $15\sqrt{4/6}\approx12.25$.
+The density curve looks like this:
+
+```{r}
+gf_dist(dist="norm", mean=100, sd=15, color="black") %>%
+  gf_fun(dt((x-100)/12.25, df=6)/12.25 ~ x, color=~"null") %>%
+  gf_fun(dt((x-110)/12.25, df=6)/12.25 ~ x, color=~"alt")
+```
+
+We simulate the setup as before:
+
+```{r}
+p.values.null = sapply(1:N.sim, function(n) {
+  dist1 = rt(N, 6)*12.25 + 100
+  dist2 = rt(N, 6)*12.25 + 100
+  t.test(dist1, dist2)$p.value
+})
+p.values.alt = sapply(1:N.sim, function(n) {
+  dist1 = rt(N, 6)*12.25 + 100
+  dist2 = rt(N, 6)*12.25 + 110
+  t.test(dist1, dist2)$p.value
+})
+
+c(`% rejected null` = 100*sum(p.values.null < 0.05)/N.sim,
+  `% rejected alt` = 100*sum(p.values.alt < 0.05)/N.sim)
+```
+
+This still behaves very close to the level and power we specified. 
+To make it more extreme, we can move to a $t(3)$ distribution.
+We get a scaling factor of $15\sqrt{1/3}\approx8.66$.
+The density curve looks like this:
+
+```{r}
+gf_dist(dist="norm", mean=100, sd=15, color="black") %>%
+  gf_fun(dt((x-100)/8.66, df=3)/8.66 ~ x, color=~"null") %>%
+  gf_fun(dt((x-110)/8.66, df=3)/8.66 ~ x, color=~"alt")
+```
+
+We simulate the setup as before:
+
+```{r}
+p.values.null = sapply(1:N.sim, function(n) {
+  dist1 = rt(N, 3)*8.66 + 100
+  dist2 = rt(N, 3)*8.66 + 100
+  t.test(dist1, dist2)$p.value
+})
+p.values.alt = sapply(1:N.sim, function(n) {
+  dist1 = rt(N, 3)*8.66 + 100
+  dist2 = rt(N, 3)*8.66 + 110
+  t.test(dist1, dist2)$p.value
+})
+
+c(`% rejected null` = 100*sum(p.values.null < 0.05)/N.sim,
+  `% rejected alt` = 100*sum(p.values.alt < 0.05)/N.sim)
+```
+
+This gives us much more acceptable results than Cook got for the $t(3)$ distribution.
+The reason is that Cook used a scaling factor of 15 as compared to our computed 8.66.
+So which one should be used?
+Let's simulate that question as well while we're at it!
+
+```{r}
+t.3.15 = sapply(1:N, function(n) { 
+  sd(rt(N,3)*15)
+  })
+t.3.866 = sapply(1:N, function(n) { 
+  sd(rt(N,3)*8.66)
+  })
+data.frame(t.15=t.3.15, t.866=t.3.866) %>%
+  pivot_longer(everything()) %>%
+  gf_dens(~value, color=~name) %>%
+  gf_vline(xintercept = 15)
+```
+
+
+
