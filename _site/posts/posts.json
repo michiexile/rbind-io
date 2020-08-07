@@ -1,5 +1,16 @@
 [
   {
+    "path": "posts/2020-08-07-confidence-intervals/",
+    "title": "Confidence intervals for Bernoulli samples",
+    "description": "Empirical exploration of the sizes of two Bernoulli confidence intervals.",
+    "author": [],
+    "date": "2020-08-07",
+    "categories": [],
+    "preview": "posts/2020-08-07-confidence-intervals/distill-preview.png",
+    "last_modified": "2020-08-07T17:53:07-04:00",
+    "input_file": "confidence-intervals.utf8.md"
+  },
+  {
     "path": "posts/2020-08-04-robustness/",
     "title": "Robustness simulations in R",
     "description": "Repeating robustness tests from John D Cook's blog, but with R code instead of Python.",

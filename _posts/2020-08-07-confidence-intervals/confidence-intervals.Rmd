@@ -1,0 +1,105 @@
+---
+title: "Confidence intervals for Bernoulli samples"
+description: |
+  Empirical exploration of the sizes of two Bernoulli confidence intervals.
+date: "`r Sys.Date()`"
+output: distill::distill_article
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(knitr)
+library(tidyverse)
+library(ggformula)
+```
+
+In Larry Wasserman's *All of Nonparametric Statistics*, the following example occurs when discussing different kinds of confidence sets:
+
+Let $X_1,\dots,X_n\sim\text{Bernoulli}(p)$. Then a *pointwise asymptotic* $1-\alpha$ confidence interval is given by
+
+\[
+\hat p_n \pm z_{\alpha/2}\sqrt{\frac{\hat p_n(1-\hat p_n)}{n}}
+\]
+
+and a *finite sample* confidence interval is given by (using Hoeffding's inequality)
+
+\[
+\hat p_n\pm\sqrt{\frac{1}{2n}\log\left(\frac{2}{\alpha}\right)}
+\]
+
+The distinction between pointwise asymptotic and finite sample confidence intervals is rooted in using a statistical model: a statistical model $\mathfrak F$ is some collection of distribution functions. 
+
+A confidence interval $C_n$ is a *finite sample* confidence interval if
+
+\[
+\inf_{F\in\mathfrak F}\mathbb{P}(\theta\in C_n) \geq 1-\alpha
+\]
+
+and it is a *pointwise asymptotic* confidence interval if for every $F\in\mathfrak F$,
+
+\[
+\liminf_{n\to\infty}\mathbb{P}(\theta\in C_n)\geq 1-\alpha
+\]
+
+The pointwise asymptotic intervals actually depend on which distribution function $F\in\mathfrak F$ is the "correct one", while the finite sample intervals optimize over all possible distribution functions.
+Appropriate sample sizes to actually get far enough along the limit (in a pointwise asymptotic interval) depend on this "correct" $F$, and thus cannot usually be known when using it.
+
+## Comparing confidence intervals
+
+Seeing this laid out for me immediately inspired the question: which confidence interval in this Bernoulli example is narrower?
+Are we sacrificing precision for theoretical soundness when using the finite sample confidence interval?
+What are the implicit tradeoffs here?
+
+So let's have a look at it, using simulation!
+
+```{r}
+alpha = 0.05
+ci.pa = function(X) {
+  p = mean(X)
+  w = qnorm(1-alpha/2)*sqrt(p*(1-p)/length(X))
+  data.frame(lo=p-w, hi=p+w)
+}
+ci.fs = function(X) {
+  p = mean(X)
+  w = sqrt(log(2/alpha)/(2*length(X)))
+  data.frame(lo=p-w, hi=p+w)
+}
+```
+
+For our simulation, we shall generate a lot of Bernoulli draws from different distributions, and record the interval width `hi-lo` for each case.
+
+```{r}
+N.sim = 1000
+sample.sizes = c(5,10,50,100)
+
+sim = do.call(rbind, lapply(1:N.sim, function(n) {
+  inner.sim = do.call(rbind, lapply(sample.sizes, function(ss) {
+    p = runif(1)
+    draws = rbernoulli(ss, p=p)
+    i.pa = ci.pa(draws)
+    i.fs = ci.fs(draws)
+    w.pa = i.pa$hi-i.pa$lo
+    w.fs = i.fs$hi-i.fs$lo
+    data.frame(ss=ss, pa=w.pa, fs=w.fs)
+  }))
+  data.frame(sample.size=inner.sim$ss, 
+             width.pa=inner.sim$pa,
+             width.fs=inner.sim$fs)
+}))
+```
+
+Now that we have all these confidence interval widths, let's look at how they distribute.
+
+```{r}
+sim %>%
+  pivot_longer(c(width.pa, width.fs)) %>%
+  gf_boxplot(value ~ name | sample.size) 
+```
+
+A few observations here. First off - and with no real surprise - the finite sample confidence interval widths do not change within a sample size.
+This is (once you think of it) because the estimator itself plays no role in creating the confidence interval width.
+A second observation is that the width of the confidence interval is consistently smaller pointwise asymptotic case.
+
+So there is, indeed, a trade-off between quality of the confidence interval (pointwise asymptotic vs. finite sample) and width of the confidence interval.
+By using the pointwise asymptotic version, we get a higher theoretical uncertainty in our results - appropriate sample sizes for a specific application depend on the true and unknown value of $p$ - but we do get more precise confidence intervals out of the bargain.
+
