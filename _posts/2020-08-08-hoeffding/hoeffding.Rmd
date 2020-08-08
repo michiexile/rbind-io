@@ -1,0 +1,58 @@
+---
+title: "Hoeffding's inequality and a Bernoulli confidence interval"
+description: |
+  Following up on the previous article, we take a closer look at the derivation of the conservative finite sample confidence interval.
+date: "`r Sys.Date()`"
+output: distill::distill_article
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+
+In our [previous post](http://michiexile.rbind.io/posts/2020-08-07-confidence-intervals/), we investigated two different confidence intervals: one of them the usual normal distribution approximation, and the other one a finite sample confidence interval with better convergence properties.
+Let's take a look at the derivation of the second of these confidence intervals:
+
+\[
+\hat p_n\pm\sqrt{\frac{1}{2n}\log\left(\frac{2}{\alpha}\right)}
+\]
+
+The setting is: $X_1,\dots,X_n\sim\text{Bernoulli}(p)$.
+We want a $1-\alpha$ finite sample confidence interval $C_n$, in other words we want, for all $n$, that
+
+\[
+\inf_{F\in\mathfrak F}\mathbb{P}(p\in C_n)\geq1-\alpha
+\]
+
+Now, Wasserman says that we can use Hoeffding's inequality to achieve this.
+
+**Theorem** (Hoeffding's inequality)
+Let $X_1,\dots,X_n\sim\text{Bernoulli}(p)$.
+Then for any $\epsilon>0$, 
+\[
+\mathbb{P}(|\hat p_n-p|>\epsilon)\leq 2\exp[-2n\epsilon^2]
+\]
+
+So how do we get from the one to the other?
+
+$p\in C_n$ where $C_n = \hat p_n\pm W$ for some $W$ is equivalent to $|\hat p_n-p|<W$.
+To construct a $1-\alpha$ confidence interval, we want $\mathbb{P}(p\in C_n)\geq 1-\alpha$, so we want $\mathbb{P}(p\not\in C_n)<\alpha$.
+In other words we need for all $n$ that
+
+\[
+\mathbb{P}(|\hat p_n-p|>W) < \alpha
+\]
+
+Hoeffding's inequality tells us that with $\epsilon=W$, we get the bound we need as $\alpha=2\exp[-2n\epsilon^2]=2\exp[-2nW^2]$.
+Now it's just a matter of solving for $W$ to see that we get
+
+\begin{align*}
+\alpha/2 &= \exp[-2nW^2] \\
+2/\alpha &= \exp[2nW^2] \\
+\log\left(\frac{2}{\alpha}\right) &= 2nW^2
+\sqrt{\frac{1}{2n}\log\left(\frac{2}{\alpha}\right)} &= W
+\end{align*}
+
+The inequality holds for any $\epsilon$ and any set of Bernoulli variables, and produces a lower bound to the probability we need across all distributions $F\in\mathfrak F$.
+The finite sample condition follows directly.
