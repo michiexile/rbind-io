@@ -1303,209 +1303,6 @@
 <!--/radix_placeholder_site_before_body-->
 <!--radix_placeholder_article_listing-->
 
-<style type="text/css">
-
-/* Styles for listing layout (hide title) */
-.layout-listing d-title, .layout-listing .d-title {
-  display: none;
-}
-
-/* Styles for posts lists (not auto-injected) */
-
-
-.posts-with-sidebar {
-  padding-left: 45px;
-  padding-right: 45px;
-}
-
-.posts-list .description h2,
-.posts-list .description p {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", Arial, sans-serif;
-}
-
-.posts-list .description h2 {
-  font-weight: 700;
-  border-bottom: none;
-  padding-bottom: 0;
-}
-
-.posts-list h2.post-tag {
-  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
-  padding-bottom: 12px;
-}
-.posts-list {
-  margin-top: 60px;
-  margin-bottom: 24px;
-}
-
-.posts-list .post-preview {
-  text-decoration: none;
-  overflow: hidden;
-  display: block;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-  padding: 24px 0;
-}
-
-.post-preview-last {
-  border-bottom: none !important;
-}
-
-.posts-list .posts-list-caption {
-  grid-column: screen;
-  font-weight: 400;
-}
-
-.posts-list .post-preview h2 {
-  margin: 0 0 6px 0;
-  line-height: 1.2em;
-  font-style: normal;
-  font-size: 24px;
-}
-
-.posts-list .post-preview p {
-  margin: 0 0 12px 0;
-  line-height: 1.4em;
-  font-size: 16px;
-}
-
-.posts-list .post-preview .thumbnail {
-  box-sizing: border-box;
-  margin-bottom: 24px;
-  position: relative;
-  max-width: 500px;
-}
-.posts-list .post-preview img {
-  width: 100%;
-  display: block;
-}
-
-.posts-list .metadata {
-  font-size: 12px;
-  line-height: 1.4em;
-  margin-bottom: 18px;
-}
-
-.posts-list .metadata > * {
-  display: inline-block;
-}
-
-.posts-list .metadata .publishedDate {
-  margin-right: 1em;
-}
-
-.posts-list .metadata .tags {
-  margin-top: 1em;
-}
-
-.posts-list .tags .tag {
-  color: rgba(0,0,0,0.67);
-  padding: 0.3em 0.5em;
-  margin: 0;
-  font-size: 80%;
-  border: 1px solid rgba(0,0,0,0.4);
-  border-radius: 3px;
-  text-transform: uppercase;
-  font-weight: 500;
-}
-
-.posts-list img {
-  opacity: 1;
-}
-
-.posts-list img[data-src] {
-  opacity: 0;
-}
-
-.posts-more {
-  clear: both;
-}
-
-
-.posts-sidebar {
-  font-size: 16px;
-}
-
-.posts-sidebar h3 {
-  font-size: 16px;
-  margin-top: 0;
-  margin-bottom: 0.5em;
-  font-weight: 400;
-  text-transform: uppercase;
-}
-
-.sidebar-section {
-  margin-bottom: 30px;
-}
-
-.categories ul {
-  list-style-type: none;
-  margin: 0;
-  padding: 0;
-}
-
-.categories li {
-  color: rgba(0, 0, 0, 0.8);
-  margin-bottom: 0;
-}
-
-.categories li>a {
-  border-bottom: none;
-}
-
-.categories li>a:hover {
-  border-bottom: 1px solid rgba(0, 0, 0, 0.4);
-}
-
-.categories .active {
-  font-weight: 600;
-}
-
-.categories .category-count {
-  color: rgba(0, 0, 0, 0.4);
-}
-
-
-@media(min-width: 768px) {
-  .posts-list .post-preview h2 {
-    font-size: 26px;
-  }
-  .posts-list .post-preview .thumbnail {
-    float: right;
-    width: 35%;
-    margin-bottom: 0;
-  }
-  .posts-list .post-preview .description {
-    float: left;
-    width: 45%;
-  }
-  .posts-list .post-preview .metadata {
-    float: left;
-    width: 15%;
-    margin-top: 8px;
-  }
-  .posts-list .post-preview p {
-    margin: 0 0 12px 0;
-    line-height: 1.5em;
-    font-size: 16px;
-  }
-  .posts-with-sidebar .posts-list {
-    float: left;
-    width: 72%;
-  }
-  .posts-with-sidebar .posts-sidebar {
-    float: right;
-    width: 20%;
-    margin-top: 60px;
-    padding-top: 24px;
-    padding-bottom: 24px;
-  }
-}
-
-.downlevel .posts-list .post-preview {
-  color: inherit;
-}
-
-</style>
 
 <script type="application/javascript">
 
@@ -1515,7 +1312,7 @@ function init_posts_list() {
     var src = $(img).attr('data-src');
     if (src) {
       $(img).attr('src', src);
-      $(img).load(function() {
+      $(img).on("load", function() {
         img.removeAttribute('data-src');
       });
     }
@@ -1557,16 +1354,17 @@ function init_posts_list() {
     set_posts_visible($('.posts-list').children('a'), false);
 
     // if we have a hash filter
-    if (window.location.hash) {
+    if (window.location.hash && window.location.hash.startsWith("#category:")) {
 
       // mark posts that match the category visible
-      var page_category = window.location.hash.replace("#", "");
+      var page_category = window.location.hash.replace(/^#category:/, "");
+      page_category = decodeURIComponent(page_category)
       var posts = $('.post-metadata').map(function(idx, script) {
         var metadata = $.parseJSON($(script).html());
         var post = null;
         $.each(metadata.categories, function(idx, category) {
           category = category.replace(/ /g,"_");
-          if (category == page_category) {
+          if ((page_category || '').toLowerCase() === "articles" || category === page_category) {
             post = $(script).parent().get();
             return false;
           }
@@ -1576,12 +1374,24 @@ function init_posts_list() {
       set_posts_visible(posts, true);
 
       // mark the hash active
-      $('.categories li>a[href="' + window.location.hash + '"]').addClass('active');
+      $('.categories li>a[href="' + decodeURIComponent(window.location.hash) + '"]').addClass('active');
+
+      // update the list_caption
+      var list_caption = $('.posts-list-caption');
+      var caption = (page_category || '').toLowerCase() === "articles"
+        ? list_caption.attr('data-caption')
+        : ('Category: ' + page_category.replace(/_/g," "));
+      list_caption.text(caption);
 
     } else {
 
       // no hash filter, make all posts visible (subject to max display)
       set_posts_visible($('.posts-list').children(), true);
+
+      // reset list caption
+      var list_caption = $('.posts-list-caption');
+      list_caption.text(list_caption.attr('data-caption'));
+
 
     }
   }
@@ -1596,6 +1406,12 @@ function init_posts_list() {
       $('.posts-more a').addClass('hidden');
     }
   }
+
+  // click handling for tags
+  $('.dt-tag').click(function(ev) {
+    window.location.hash = '#category:' + $(this).text().replace(/ /g, "_");
+    return false;
+  })
 
   // hash filter handling
   apply_hash_filter();
@@ -1620,15 +1436,32 @@ function init_posts_list() {
 
 <div class="posts-container posts-apply-limit l-page">
 <div class="posts-list">
-<h1 class="posts-list-caption">michiexile on statistics</h1>
+<h1 class="posts-list-caption" data-caption="michiexile on statistics">michiexile on statistics</h1>
+<a href="posts/2023-02-14-student-errata/" class="post-preview">
+<script class="post-metadata" type="text/json">{"categories":[]}</script>
+<div class="metadata">
+<div class="publishedDate">Feb. 14, 2023</div>
+<div class="dt-authors"></div>
+</div>
+<div class="thumbnail"></div>
+<div class="description">
+<h2>Errata for Student (1908)</h2>
+<div class="dt-tags"></div>
+<p>There are arithmetic errors in the paper that created Student's T-test.</p>
+</div>
+</a>
 <a href="posts/2020-08-08-hoeffding/" class="post-preview">
 <script class="post-metadata" type="text/json">{"categories":[]}</script>
 <div class="metadata">
 <div class="publishedDate">Aug. 8, 2020</div>
+<div class="dt-authors"></div>
 </div>
-<div class="thumbnail"></div>
+<div class="thumbnail">
+<img/>
+</div>
 <div class="description">
 <h2>Hoeffding's inequality and a Bernoulli confidence interval</h2>
+<div class="dt-tags"></div>
 <p>Following up on the previous article, we take a closer look at the derivation of the conservative finite sample confidence interval.</p>
 </div>
 </a>
@@ -1636,12 +1469,14 @@ function init_posts_list() {
 <script class="post-metadata" type="text/json">{"categories":[]}</script>
 <div class="metadata">
 <div class="publishedDate">Aug. 7, 2020</div>
+<div class="dt-authors"></div>
 </div>
 <div class="thumbnail">
-<img data-src="posts/2020-08-07-confidence-intervals/distill-preview.png"/>
+<img src="posts/2020-08-07-confidence-intervals/distill-preview.png"/>
 </div>
 <div class="description">
 <h2>Confidence intervals for Bernoulli samples</h2>
+<div class="dt-tags"></div>
 <p>Empirical exploration of the sizes of two Bernoulli confidence intervals.</p>
 </div>
 </a>
@@ -1649,12 +1484,14 @@ function init_posts_list() {
 <script class="post-metadata" type="text/json">{"categories":[]}</script>
 <div class="metadata">
 <div class="publishedDate">Aug. 5, 2020</div>
+<div class="dt-authors"></div>
 </div>
 <div class="thumbnail">
-<img data-src="posts/2020-08-04-robustness/distill-preview.png"/>
+<img src="posts/2020-08-04-robustness/distill-preview.png"/>
 </div>
 <div class="description">
 <h2>Robustness simulations in R</h2>
+<div class="dt-tags"></div>
 <p>Repeating robustness tests from John D Cook's blog, but with R code instead of Python.</p>
 </div>
 </a>
@@ -1662,12 +1499,14 @@ function init_posts_list() {
 <script class="post-metadata" type="text/json">{"categories":[]}</script>
 <div class="metadata">
 <div class="publishedDate">July 24, 2020</div>
+<div class="dt-authors"></div>
 </div>
 <div class="thumbnail">
-<img data-src="posts/2020-07-24-bootstrap/distill-preview.png"/>
+<img src="posts/2020-07-24-bootstrap/distill-preview.png"/>
 </div>
 <div class="description">
 <h2>The Bootstrap</h2>
+<div class="dt-tags"></div>
 <p>A description of the Bootstrap, and an example from "All of Statistics"</p>
 </div>
 </a>
@@ -1675,12 +1514,16 @@ function init_posts_list() {
 <script class="post-metadata" type="text/json">{"categories":[]}</script>
 <div class="metadata">
 <div class="publishedDate">June 13, 2020</div>
+<div class="dt-authors">
+<div class="dt-author">Mikael Vejdemo-Johansson</div>
+</div>
 </div>
 <div class="thumbnail">
 <img data-src="posts/2020-06-13-mythbusters-navigation/mythbusters-navigation_files/figure-html5/unnamed-chunk-2-1.png"/>
 </div>
 <div class="description">
 <h2>Mythbusters Navigation</h2>
+<div class="dt-tags"></div>
 <p>A look at data from Mythbusters 12x5.</p>
 </div>
 </a>

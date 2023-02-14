@@ -2,7 +2,7 @@
 title: "Hoeffding's inequality and a Bernoulli confidence interval"
 description: |
   Following up on the previous article, we take a closer look at the derivation of the conservative finite sample confidence interval.
-date: "`r Sys.Date()`"
+date: "2020-08-08"
 output: distill::distill_article
 ---
 
