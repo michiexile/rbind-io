@@ -1,0 +1,62 @@
+---
+title: "Making an illustration of Orthogonal Regression"
+description: |
+  It's easy enough to draw a figure illustrating the distances used 
+  in the optimization target for an ordinary linear regression. 
+  Getting the corresponding illustration right for orthogonal regression
+  took me enough extra work that I wanted to share the resolution.
+date: "2023-03-25"
+output: distill::distill_article
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+# Orthogonal Regression
+
+Orthogonal Regression is one approach to linear regression when your predictor variable(s) is not deterministic. Since the predictors are random, a best fit point on the regression line has no guarantee to share value with the predictors directly.
+
+Orthogonal Regression approaches this by assigning to each point the distance to the regression line/plane/... along an orthogonal projection onto that regression space. (see the final figure below for a good illustration)
+
+It is a special case of _Deming Regression_, where you do maximum likelihood estimation of a linear model with expected errors in the predictors as well as responses, and where errors are assumed to be independent, normally distributed, and with known ratio of their variances.
+
+# PCA computes the regression
+
+One approach to orthogonal regression is by using Principal Component Analysis. While a bunch of places on the internet discuss how to find and plot the right _regression line_ this way, much fewer sources discuss how to find the right line segments to illustrate things.
+
+```{r}
+library(tidyverse)
+b.0 = -10
+b.1 = 0.5
+df = tibble(x = runif(20,0,20),
+            y = b.1*x+b.0+rnorm(20,sd=2.5))
+```
+
+Given data in `df$x` and `df$y`, you would fit a PCA model to the data, and then use the rotation matrix and center computations to derive slope and intercept for a line of best fit.
+
+```{r echo=TRUE}
+pca = prcomp(~x + y, data=df)
+o.1 = pca$rotation[2,1] / pca$rotation[1,1]
+o.0 = pca$center[2] - o.1*pca$center[1]
+
+ggplot(df) +
+  geom_point(aes(x,y)) +
+  geom_abline(slope=o.1, intercept=o.0) +
+  coord_fixed() + xlim(0,20) + ylim(-15,5)
+```
+So far so good. But I really want small line segments connecting the data points to the line of best fit, to illustrate what's going on. And though it looked like my first several attempts got nowhere near a sensible result, it turned out to be a matter of different scales for different axes... The exact solution I thought would work, did - it just didn't look like it would when I tried it on a small data set, because the slope was too steep.
+
+
+```{r echo=T}
+orth = t(pca$x[,1] %*% t(pca$rotation[,1])) + pca$center
+df$xorth = orth[1,]
+df$yorth = orth[2,]
+ggplot(df) +
+  geom_point(aes(x,y)) +
+  geom_segment(aes(x=x,y=y,xend=xorth,yend=yorth)) +
+  geom_abline(slope=o.1, intercept=o.0) +
+  coord_fixed() + xlim(0,20) + ylim(-15,5)
+```
+
+
